@@ -91,6 +91,29 @@ class AVLTree(object):
     """
 
     def insert(self, key, val):
+        if self.root is None:
+            self.root = AVLNode(key, val)
+            return self.root, 0, 0, 0            
+        tmp = self.root       
+        while tmp is not None:
+            if key < tmp.key:
+                if tmp.left is None:
+                    tmp.left = AVLNode(key, val)
+                    tmp.left.parent = tmp
+                    tmp = tmp.left
+                else:
+                    tmp = tmp.left
+            else:
+                if tmp.right is None:
+                    tmp.right = AVLNode(key, val)
+                    tmp.right.parent = tmp
+                    tmp = tmp.right
+                else:
+                    tmp = tmp.right
+        if self.is_avl:
+            pass
+        else:
+            return tmp, -1, -1, -1
         return None, -1, -1, -1
 
     """deletes node from the dictionary
