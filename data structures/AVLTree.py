@@ -18,12 +18,12 @@ class AVLNode(object):
     @param value: data of your node
     """
 
-    def __init__(self, key, value, is_real=True, virtual_node=None):
+    def __init__(self, key, value, is_real=True, VIRTUAL_NODE=None):
         self.key = key
         self.value = value
-        self.left = virtual_node
-        self.right = virtual_node
-        self.parent = None
+        self.left = VIRTUAL_NODE
+        self.right = VIRTUAL_NODE
+        self.parent = VIRTUAL_NODE
         self.height = -1
         self.is_real = is_real
 
@@ -49,9 +49,9 @@ class AVLTree(object):
     @type is_avl: boolean
     @param is_avl: If True then tree is AVL, otherwise it is just a "regular" binary search tree, without rotations.
     """
-
+    VIRTUAL_NODE = AVLNode(None, None, True)
     def __init__(self, is_avl):
-        self.root = None
+        self.root = VIRTUAL_NODE
         self.is_avl = is_avl
 
     """searches for a node in the dictionary corresponding to the key (starting at the root)
