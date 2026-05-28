@@ -62,7 +62,21 @@ class AVLTree(object):
     """
 
     def search(self, key):
-        return None, -1
+        cur = self.root
+        search_time = 0
+        while cur != None:
+            if key == cur.key:
+                return cur, search_time + 1
+            
+            elif key > cur.key:
+                search_time += 1
+                cur = cur.right
+            
+            else:
+                search_time += 1
+                cur = cur.left
+        
+        return None, search_time + 1
 
     """inserts a new node into the dictionary with corresponding key and value (starting at the root)
 
