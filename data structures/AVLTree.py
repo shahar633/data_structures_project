@@ -18,13 +18,14 @@ class AVLNode(object):
     @param value: data of your node
     """
 
-    def __init__(self, key, value):
+    def __init__(self, key, value, is_real=True, virtual_node=None):
         self.key = key
         self.value = value
-        self.left = None
-        self.right = None
+        self.left = virtual_node
+        self.right = virtual_node
         self.parent = None
         self.height = -1
+        self.is_real = is_real
 
     """returns whether self is not a virtual node 
 
@@ -33,7 +34,7 @@ class AVLNode(object):
     """
 
     def is_real_node(self):
-        return False
+        return self.is_real
 
 
 """
@@ -51,6 +52,7 @@ class AVLTree(object):
 
     def __init__(self, is_avl):
         self.root = None
+        self.is_avl = is_avl
 
     """searches for a node in the dictionary corresponding to the key (starting at the root)
 
@@ -140,6 +142,69 @@ class AVLTree(object):
 
 
     def delete(self, node):
+        fix_from = None
+
+        if not node.left.is_real_node():
+            child = node.right
+            fix_from = node.parent
+
+            if node == self.root:
+                self.root = child
+            elif node == node.parent.left:
+                node.parent.left = child
+            else:
+                node.parent.right = child
+
+            if child.is_real_node():
+                child.parent = node.parent
+
+        elif not node.right.is_real_node():
+            child = node.left
+            fix_from = node.parent
+
+            if node == self.root:
+                self.root = child
+            elif node == node.parent.left:
+                node.parent.left = child
+            else:
+                node.parent.right = child
+
+            if child.is_real_node():
+                child.parent = node.parent
+
+        else:
+            successor = self.successor(node)
+            succ_parent = successor.parent
+            fix_from = successor if succ_parent == node else succ_parent
+
+            if succ_parent.left == successor:
+                succ_parent.left = successor.right
+            else:
+                succ_parent.right = successor.right
+
+            if successor.right.is_real_node():
+                successor.right.parent = succ_parent
+
+            successor.parent = node.parent
+            successor.left = node.left
+            successor.right = node.right
+
+            if successor.left.is_real_node():
+                successor.left.parent = successor
+
+            if successor.right.is_real_node():
+                successor.right.parent = successor
+
+            if node == self.root:
+                self.root = successor
+            elif node.parent.left == node:
+                node.parent.left = successor
+            else:
+                node.parent.right = successor
+
+        if self.is_avl:
+            pass
+
         return
 
     """returns a list representing dictionary 
