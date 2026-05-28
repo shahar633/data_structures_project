@@ -99,6 +99,23 @@ class AVLTree(object):
     @pre: node is a real pointer to a node in self
     """
 
+    def successor(self, x):
+        if x.right.is_real_node():
+            cur = x.right
+
+            while cur.left.is_real_node():
+                cur = cur.left
+            
+            return cur
+        
+        cur = x
+
+        while cur.parent.is_real_node() and cur == cur.parent.right:
+            cur = cur.parent
+        
+        return cur.parent
+
+
     def delete(self, node):
         return
 
