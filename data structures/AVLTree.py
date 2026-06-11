@@ -18,12 +18,12 @@ class AVLNode(object):
     @param value: data of your node
     """
 
-    def __init__(self, key, value, is_real=True, VIRTUAL_NODE=None):
+    def __init__(self, key, value, is_real=True):
         self.key = key
         self.value = value
-        self.left = VIRTUAL_NODE
-        self.right = VIRTUAL_NODE
-        self.parent = VIRTUAL_NODE
+        self.left = None
+        self.right = None
+        self.parent = None
         self.height = -1
         self.is_real = is_real
 
@@ -49,7 +49,7 @@ class AVLTree(object):
     @type is_avl: boolean
     @param is_avl: If True then tree is AVL, otherwise it is just a "regular" binary search tree, without rotations.
     """
-    VIRTUAL_NODE = AVLNode(None, None, True)
+    VIRTUAL_NODE = AVLNode(None, None, False)
     def __init__(self, is_avl):
         self.root = VIRTUAL_NODE
         self.is_avl = is_avl
@@ -93,8 +93,11 @@ class AVLTree(object):
     """
 
     def insert(self, key, val):
-        if self.root is None:
+        if self.root is VIRTUAL_NODE:
             self.root = AVLNode(key, val)
+            self.root.left = VIRTUAL_NODE
+            self.root.right = VIRTUAL_NODE
+            self.root.parent = VIRTUAL_NODE
             return self.root, 0, 0, 0            
         tmp = self.root       
         while tmp is not None:
@@ -242,3 +245,37 @@ class AVLTree(object):
 
     def get_height(self):
         return -1
+
+
+
+    def right_rotation(self, B):
+        A = B.left
+        B.left = A.right
+        if B.left.is_real_node():
+            B.left.parent = B
+        A.right = B
+        A.parent = B.parent
+        if A.parent.is_real_node():
+            if A.parent.left == B:
+                A.parent.left = A
+            else:
+                A.parent.right = A
+        else:
+            self.root = A
+        B.parent = A
+
+    def left_rotation(self, B):
+        A = B.right
+        B.right = A.left
+        if B.right.is_real_node():
+            B.right.parent = B
+        A.left = B
+        A.parent = B.parent
+        if A.parent.is_real_node():
+            if A.parent.left == B:
+                A.parent.left = A
+            else:
+                A.parent.right = A
+        else:
+            self.root = A
+        B.parent = A
