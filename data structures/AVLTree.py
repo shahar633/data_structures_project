@@ -50,8 +50,9 @@ class AVLTree(object):
     @param is_avl: If True then tree is AVL, otherwise it is just a "regular" binary search tree, without rotations.
     """
     VIRTUAL_NODE = AVLNode(None, None, False)
+
     def __init__(self, is_avl):
-        self.root = VIRTUAL_NODE
+        self.root = self.VIRTUAL_NODE
         self.is_avl = is_avl
 
     """searches for a node in the dictionary corresponding to the key (starting at the root)
@@ -92,12 +93,32 @@ class AVLTree(object):
     and the other 3 return values are as defined and explained in the assignment.
     """
 
+    def rebalance(self, node):
+        bf = node.left.height - node.right.height
+        if bf == -2:
+            right_child_bf = node.right.left.height - node.right.right.height
+            if right_child_bf == 1:
+                self.right_rotation(node.right)
+                self.left_rotation(node)
+            else:
+                self.left_rotation(node)
+        
+        if bf == 2:
+            left_child_bf = node.left.left.height - node.left.right.height
+            if left_child_bf == -1:
+                self.left_rotation(node.left)
+                self.right_rotation(node)
+            else:
+                self.right_rotation(node)
+
+
+
     def insert(self, key, val):
-        if self.root is VIRTUAL_NODE:
+        if self.root is self.VIRTUAL_NODE:
             self.root = AVLNode(key, val)
-            self.root.left = VIRTUAL_NODE
-            self.root.right = VIRTUAL_NODE
-            self.root.parent = VIRTUAL_NODE
+            self.root.left = self.VIRTUAL_NODE
+            self.root.right = self.VIRTUAL_NODE
+            self.root.parent = self.VIRTUAL_NODE
             return self.root, 0, 0, 0            
         tmp = self.root       
         while tmp is not None:
@@ -146,67 +167,66 @@ class AVLTree(object):
 
     def delete(self, node):
         fix_from = None
-
-        if not node.left.is_real_node():
-            child = node.right
-            fix_from = node.parent
-
-            if node == self.root:
-                self.root = child
-            elif node == node.parent.left:
-                node.parent.left = child
+        if not node.is_real_node():
+            return
+        
+        if not node.right.is_real_node() and not node.left.is_real_node(): # If the node doesn't have any children
+            if node.parent.is_real_node():
+                if node == node.parent.left:
+                    node.parent = self.VIRTUAL_NODE
+                    node.parent.height = 1 + node.right.height
+                    fix_from = node.parent
+                else:
+                    node.parent = self.VIRTUAL_NODE
+                    node.parent.height = 1 + node.left.height
+                    fix_from = node.parent
             else:
-                node.parent.right = child
+                self.root = self.VIRTUAL_NODE
 
-            if child.is_real_node():
-                child.parent = node.parent
+        elif node.right.is_real_node() and node.left.is_real_node(): # If the node have both children
+            succ = self.successor(node)
 
-        elif not node.right.is_real_node():
-            child = node.left
-            fix_from = node.parent
-
-            if node == self.root:
-                self.root = child
-            elif node == node.parent.left:
-                node.parent.left = child
+            if succ.parent.left == succ:
+                succ.parent.left = succ.right
             else:
-                node.parent.right = child
+                succ.parent.right = succ.right
+            
+            fix_from = succ.parent
+            succ.left = node.left
+            succ.right = node.right
+            succ.parent = node.parent
 
-            if child.is_real_node():
-                child.parent = node.parent
-
-        else:
-            successor = self.successor(node)
-            succ_parent = successor.parent
-            fix_from = successor if succ_parent == node else succ_parent
-
-            if succ_parent.left == successor:
-                succ_parent.left = successor.right
+            if node == node.parent.left:
+                node.parent.left = succ
             else:
-                succ_parent.right = successor.right
+                node.parent.right = succ
 
-            if successor.right.is_real_node():
-                successor.right.parent = succ_parent
 
-            successor.parent = node.parent
-            successor.left = node.left
-            successor.right = node.right
-
-            if successor.left.is_real_node():
-                successor.left.parent = successor
-
-            if successor.right.is_real_node():
-                successor.right.parent = successor
-
-            if node == self.root:
-                self.root = successor
-            elif node.parent.left == node:
-                node.parent.left = successor
+        else: # If the node has exactly 1 child (left or right)
+            if node.right.is_real_node():
+                tmp = node.right
             else:
-                node.parent.right = successor
+                tmp = node.left
+            
+            fix_from = tmp.parent
+            tmp.parent = node.parent
+
+            if node == node.parent.left:
+                node.parent.left = tmp
+            else:
+                node.parent.right = tmp
 
         if self.is_avl:
-            pass
+            real_height = 1 + max(fix_from.right.height, fix_from.left.height)
+            while fix_from.height != real_height:
+                fix_from.height = real_height
+                self.rebalance(fix_from)
+                if fix_from.parent == self.VIRTUAL_NODE:
+                    break
+
+                fix_from = fix_from.parent
+                real_height = 1 + max(fix_from.right.height, fix_from.left.height)
+
 
         return
 
