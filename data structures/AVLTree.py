@@ -246,7 +246,12 @@ class AVLTree(object):
     """
 
     def size(self):
-        return -1
+        return self.size_rec(self.root)
+    
+    def size_rec(self, node):
+        if node == self.VIRTUAL_NODE:
+            return 0
+        return 1 + self.size_rec(node.left) + self.size_rec(node.right)
 
     """returns the root of the tree representing the dictionary
 
@@ -264,7 +269,16 @@ class AVLTree(object):
         """
 
     def get_height(self):
-        return -1
+        if self.is_avl:
+            return self.root.height
+        
+        return self.get_height_rec(self.root)
+        
+
+    def get_height_rec(self, node):
+        if node == self.VIRTUAL_NODE:
+            return -1
+        return 1 + max(self.get_height_rec(self, node.left), self.get_height_rec(self, node.left))
 
 
 
