@@ -220,7 +220,8 @@ class AVLTree(object):
             real_height = 1 + max(fix_from.right.height, fix_from.left.height)
             while fix_from.height != real_height:
                 fix_from.height = real_height
-                self.rebalance(fix_from)
+                if abs(fix_from.left.height - fix_from.right.height) > 1:
+                    self.rebalance(fix_from)
                 if fix_from.parent == self.VIRTUAL_NODE:
                     break
 
