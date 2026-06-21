@@ -25,6 +25,7 @@ class AVLNode(object):
         self.right = None
         self.parent = None
         self.height = -1
+        self.size = 0
         self.is_real = is_real
 
     """returns whether self is not a virtual node 
@@ -35,6 +36,14 @@ class AVLNode(object):
 
     def is_real_node(self):
         return self.is_real
+    
+    def __str__(self):
+        if not self.is_real_node():
+            return "Virtual Node"
+        return f"({self.key}, {self.value})"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 """
@@ -67,7 +76,7 @@ class AVLTree(object):
     def search(self, key):
         cur = self.root
         search_time = 0
-        while cur != None:
+        while cur.is_real_node():
             if key == cur.key:
                 return cur, search_time + 1
             
@@ -100,16 +109,21 @@ class AVLTree(object):
             if right_child_bf == 1:
                 self.right_rotation(node.right)
                 self.left_rotation(node)
+                return 2
             else:
                 self.left_rotation(node)
+                return 1
         
         if bf == 2:
             left_child_bf = node.left.left.height - node.left.right.height
             if left_child_bf == -1:
                 self.left_rotation(node.left)
                 self.right_rotation(node)
+                return 2
             else:
                 self.right_rotation(node)
+                return 1
+        return 0
 
 
 
@@ -119,28 +133,52 @@ class AVLTree(object):
             self.root.left = self.VIRTUAL_NODE
             self.root.right = self.VIRTUAL_NODE
             self.root.parent = self.VIRTUAL_NODE
-            return self.root, 0, 0, 0            
-        tmp = self.root       
-        while tmp is not None:
+            self.root.height = 0
+            return self.root, 1, 0, 0            
+        tmp = self.root
+        search_time = 0       
+        while tmp.is_real_node():
             if key < tmp.key:
-                if tmp.left is None:
+                if not tmp.left.is_real_node():
                     tmp.left = AVLNode(key, val)
                     tmp.left.parent = tmp
                     tmp = tmp.left
+                    break
                 else:
                     tmp = tmp.left
+                    search_time += 1
             else:
-                if tmp.right is None:
+                if not tmp.right.is_real_node():
                     tmp.right = AVLNode(key, val)
                     tmp.right.parent = tmp
                     tmp = tmp.right
+                    break
                 else:
                     tmp = tmp.right
+                    search_time += 1
+        tmp.left = self.VIRTUAL_NODE
+        tmp.right = self.VIRTUAL_NODE
+        tmp.height = 0
         if self.is_avl:
-            pass
+            fix_from = tmp.parent
+            rotations = 0
+            height_changes = 0
+            while fix_from.is_real_node():
+                real_height = 1 + max(fix_from.left.height, fix_from.right.height)
+                if fix_from.height != real_height:
+                    fix_from.height = real_height
+                    height_changes += 1
+                    if abs(fix_from.left.height - fix_from.right.height) > 1:
+                        rotations += self.rebalance(fix_from)
+                else:
+                    break
+                fix_from = fix_from.parent
+           
+            return tmp, search_time+1, rotations, height_changes
+        
+
         else:
-            return tmp, -1, -1, -1
-        return None, -1, -1, -1
+            return tmp, search_time+1, 0, 0
 
     """deletes node from the dictionary
 
@@ -173,11 +211,11 @@ class AVLTree(object):
         if not node.right.is_real_node() and not node.left.is_real_node(): # If the node doesn't have any children
             if node.parent.is_real_node():
                 if node == node.parent.left:
-                    node.parent = self.VIRTUAL_NODE
+                    node.parent.left = self.VIRTUAL_NODE
                     node.parent.height = 1 + node.right.height
                     fix_from = node.parent
                 else:
-                    node.parent = self.VIRTUAL_NODE
+                    node.parent.right = self.VIRTUAL_NODE
                     node.parent.height = 1 + node.left.height
                     fix_from = node.parent
             else:
@@ -192,14 +230,23 @@ class AVLTree(object):
                 succ.parent.right = succ.right
             
             fix_from = succ.parent
+            
             succ.left = node.left
+            if succ.left.is_real_node():
+                succ.left.parent = succ
+            
             succ.right = node.right
+            if succ.right.is_real_node():
+                succ.right.parent = succ
+            
             succ.parent = node.parent
-
-            if node == node.parent.left:
-                node.parent.left = succ
+            if node.parent.is_real_node():
+                if node == node.parent.left:
+                    node.parent.left = succ
+                else:
+                    node.parent.right = succ
             else:
-                node.parent.right = succ
+                self.root = succ
 
 
         else: # If the node has exactly 1 child (left or right)
@@ -210,11 +257,13 @@ class AVLTree(object):
             
             fix_from = tmp.parent
             tmp.parent = node.parent
-
-            if node == node.parent.left:
-                node.parent.left = tmp
+            if node.parent.is_real_node():
+                if node == node.parent.left:
+                    node.parent.left = tmp
+                else:
+                    node.parent.right = tmp
             else:
-                node.parent.right = tmp
+                self.root = tmp
 
         if self.is_avl:
             real_height = 1 + max(fix_from.right.height, fix_from.left.height)
@@ -238,7 +287,17 @@ class AVLTree(object):
     """
 
     def avl_to_list(self):
-        return None
+        res = []
+        self.avl_to_list_rec(self.root, res)
+        return res
+
+    def avl_to_list_rec(self, node, res):
+        if not node.is_real_node():
+            return
+        
+        self.avl_to_list_rec(node.left, res)
+        res.append((node.key, node.value))
+        self.avl_to_list_rec(node.right, res)
 
     """returns the number of items in dictionary 
 
@@ -247,6 +306,8 @@ class AVLTree(object):
     """
 
     def size(self):
+        if self.is_avl:
+            return self.root.size
         return self.size_rec(self.root)
     
     def size_rec(self, node):
@@ -261,6 +322,8 @@ class AVLTree(object):
     """
 
     def get_root(self):
+        if self.root.is_real_node():
+            return self.root
         return None
 
     """returns the height of the tree
@@ -282,7 +345,7 @@ class AVLTree(object):
         return 1 + max(self.get_height_rec(self, node.left), self.get_height_rec(self, node.left))
 
 
-
+    #@pre need B.left.is_real_node() == True for right rotation 
     def right_rotation(self, B):
         A = B.left
         B.left = A.right
@@ -298,7 +361,10 @@ class AVLTree(object):
         else:
             self.root = A
         B.parent = A
+        B.height = 1 + max(B.left.height, B.right.height)
+        A.height = 1 + max(A.left.height, A.right.height)
 
+    #@pre need B.right.is_real_node() == True for left rotation
     def left_rotation(self, B):
         A = B.right
         B.right = A.left
@@ -314,3 +380,5 @@ class AVLTree(object):
         else:
             self.root = A
         B.parent = A
+        B.height = 1 + max(B.left.height, B.right.height)
+        A.height = 1 + max(A.left.height, A.right.height)
