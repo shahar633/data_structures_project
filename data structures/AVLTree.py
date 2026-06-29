@@ -63,6 +63,7 @@ class AVLTree(object):
     def __init__(self, is_avl):
         self.root = self.VIRTUAL_NODE
         self.is_avl = is_avl
+        self._size = 0
 
     """searches for a node in the dictionary corresponding to the key (starting at the root)
 
@@ -134,7 +135,8 @@ class AVLTree(object):
             self.root.right = self.VIRTUAL_NODE
             self.root.parent = self.VIRTUAL_NODE
             self.root.height = 0
-            return self.root, 1, 0, 0            
+            self._size += 1
+            return self.root, 1, 0, 0
         tmp = self.root
         search_time = 0       
         while tmp.is_real_node():
@@ -159,26 +161,28 @@ class AVLTree(object):
         tmp.left = self.VIRTUAL_NODE
         tmp.right = self.VIRTUAL_NODE
         tmp.height = 0
+        self._size += 1
         if self.is_avl:
             fix_from = tmp.parent
             rotations = 0
             height_changes = 0
             while fix_from.is_real_node():
                 real_height = 1 + max(fix_from.left.height, fix_from.right.height)
-                if fix_from.height != real_height:
+                if fix_from.height == real_height:
+                    break
+                bf = abs(fix_from.left.height - fix_from.right.height)
+                if bf < 2:
                     fix_from.height = real_height
                     height_changes += 1
-                    if abs(fix_from.left.height - fix_from.right.height) > 1:
-                        rotations += self.rebalance(fix_from)
                 else:
+                    rotations += self.rebalance(fix_from)
                     break
                 fix_from = fix_from.parent
-           
-            return tmp, search_time+1, rotations, height_changes
-        
+
+            return tmp, search_time + 2, rotations, height_changes
 
         else:
-            return tmp, search_time+1, 0, 0
+            return tmp, search_time + 2, 0, 0
 
     """deletes node from the dictionary
 
@@ -207,6 +211,7 @@ class AVLTree(object):
         fix_from = None
         if not node.is_real_node():
             return
+        self._size -= 1
         
         if not node.right.is_real_node() and not node.left.is_real_node(): # If the node doesn't have any children
             if node.parent.is_real_node():
@@ -306,9 +311,7 @@ class AVLTree(object):
     """
 
     def size(self):
-        if self.is_avl:
-            return self.root.size
-        return self.size_rec(self.root)
+        return self._size
     
     def size_rec(self, node):
         if node == self.VIRTUAL_NODE:
@@ -342,7 +345,7 @@ class AVLTree(object):
     def get_height_rec(self, node):
         if node == self.VIRTUAL_NODE:
             return -1
-        return 1 + max(self.get_height_rec(self, node.left), self.get_height_rec(self, node.left))
+        return 1 + max(self.get_height_rec(node.left), self.get_height_rec(node.right))
 
 
     #@pre need B.left.is_real_node() == True for right rotation 
