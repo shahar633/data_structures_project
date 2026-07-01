@@ -25,7 +25,6 @@ class AVLNode(object):
         self.right = None
         self.parent = None
         self.height = -1
-        self.size = 0
         self.is_real = is_real
 
     """returns whether self is not a virtual node 
@@ -208,7 +207,7 @@ class AVLTree(object):
 
 
     def delete(self, node):
-        fix_from = None
+        fix_from = self.VIRTUAL_NODE
         if not node.is_real_node():
             return
         self._size -= 1
@@ -217,11 +216,9 @@ class AVLTree(object):
             if node.parent.is_real_node():
                 if node == node.parent.left:
                     node.parent.left = self.VIRTUAL_NODE
-                    node.parent.height = 1 + node.right.height
                     fix_from = node.parent
                 else:
                     node.parent.right = self.VIRTUAL_NODE
-                    node.parent.height = 1 + node.left.height
                     fix_from = node.parent
             else:
                 self.root = self.VIRTUAL_NODE
@@ -234,7 +231,13 @@ class AVLTree(object):
             else:
                 succ.parent.right = succ.right
             
+            if succ.right.is_real_node():
+                succ.right.parent = succ.parent
+            
             fix_from = succ.parent
+
+            if fix_from == node:
+                fix_from = succ
             
             succ.left = node.left
             if succ.left.is_real_node():
@@ -260,7 +263,7 @@ class AVLTree(object):
             else:
                 tmp = node.left
             
-            fix_from = tmp.parent
+            fix_from = node.parent
             tmp.parent = node.parent
             if node.parent.is_real_node():
                 if node == node.parent.left:
@@ -271,16 +274,37 @@ class AVLTree(object):
                 self.root = tmp
 
         if self.is_avl:
-            real_height = 1 + max(fix_from.right.height, fix_from.left.height)
-            while fix_from.height != real_height:
-                fix_from.height = real_height
-                if abs(fix_from.left.height - fix_from.right.height) > 1:
-                    self.rebalance(fix_from)
-                if fix_from.parent == self.VIRTUAL_NODE:
-                    break
+            if fix_from is self.VIRTUAL_NODE:
+                return
+            
 
-                fix_from = fix_from.parent
+            while fix_from.is_real_node():
                 real_height = 1 + max(fix_from.right.height, fix_from.left.height)
+                BF = abs(fix_from.left.height - fix_from.right.height)
+                if BF < 2 and fix_from.height == real_height:
+                    break
+                elif BF < 2 and fix_from.height != real_height:
+                    fix_from.height = real_height
+                    fix_from = fix_from.parent
+                    continue
+                else:
+                    self.rebalance(fix_from)
+                    fix_from.height = 1 + max(fix_from.right.height, fix_from.left.height)
+                    fix_from = fix_from.parent
+                    continue
+                    
+                
+
+        """while fix_from.height != real_height:
+            fix_from.height = real_height
+            if abs(fix_from.left.height - fix_from.right.height) > 1:
+                self.rebalance(fix_from)
+            if fix_from.parent == self.VIRTUAL_NODE:
+                break
+
+            fix_from = fix_from.parent
+            real_height = 1 + max(fix_from.right.height, fix_from.left.height)
+            """
 
 
         return
