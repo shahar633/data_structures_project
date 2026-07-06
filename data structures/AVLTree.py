@@ -175,9 +175,6 @@ class AVLTree(object):
                     height_changes += 1
                 else:
                     rotations += self.rebalance(fix_from)
-                    #fix_from.height = 1 + max(fix_from.left.height, fix_from.right.height)
-                    #if fix_from.parent.is_real_node():
-                    #    fix_from.parent.height = 1 + max(fix_from.parent.left.height, fix_from.parent.right.height)
                     break
                 fix_from = fix_from.parent
 
