@@ -271,35 +271,7 @@ def stress_tree(label, is_avl, insert_keys, delete_keys, extra_search_keys):
 
 
 def main():
-    tree = AVLTree(True)
-    insert_order = [50,41,52,40,45,51,53]
-
-    print("=== Build exact tree ===")
-    print("Insert order:", insert_order)
-    for key in insert_order:
-        node, search_time, rotations, height_changes = tree.insert(key, str(key))
-        print(f"insert({key}) -> node={node.key}, search_time={search_time}, rotations={rotations}, height_changes={height_changes}")
-
-    print("\nTree before delete(50):")
-    dump_tree(tree.get_root())
-    print_tree(tree.get_root())
-    print(f"size={tree.size()}, height={tree.get_height()}, list={tree.avl_to_list()}")
-
-    node_2, search_time_2 = tree.search(50)
-    print(f"\nsearch(2) -> found={None if node_2 is None else node_2.key}, search_time={search_time_2}")
-    if node_2 is not None:
-        tree.delete(node_2)
-
-    print("\nTree after delete(50):")
-    dump_tree(tree.get_root())
-    print_tree(tree.get_root())
-    print(f"size={tree.size()}, height={tree.get_height()}, list={tree.avl_to_list()}")
-    print(f"Height mismatches: {collect_height_mismatches(tree.get_root())}")
-    print(f"Expected height: {collect_expected_height(tree.get_root())}")
-
-    return
-    """
-
+   
     random.seed(7)
 
     cases = [
@@ -345,7 +317,7 @@ def main():
         )
         overall_ok = overall_ok and ok
 
-    print("\nOVERALL RESULT:", "PASS" if overall_ok else "FAIL")"""
+    print("\nOVERALL RESULT:", "PASS" if overall_ok else "FAIL")
 
 
 if __name__ == "__main__":
