@@ -208,9 +208,9 @@ class AVLTree(object):
         
         return cur.parent
 
-    #our code
+
     def delete(self, node):
-        fix_from = self.VIRTUAL_NODE
+        fix_from = None
         if not node.is_real_node():
             return
         self._size -= 1
@@ -228,20 +228,18 @@ class AVLTree(object):
 
         elif node.right.is_real_node() and node.left.is_real_node(): # If the node have both children
             succ = self.successor(node)
+            succ_is_child = (succ.parent == node)
+            succ.height = node.height
 
             if succ.parent.left == succ:
                 succ.parent.left = succ.right
             else:
                 succ.parent.right = succ.right
-            
             if succ.right.is_real_node():
                 succ.right.parent = succ.parent
-            
-            fix_from = succ.parent
 
-            if fix_from == node:
-                fix_from = succ
-            
+            fix_from = succ if succ_is_child else succ.parent
+
             succ.left = node.left
             if succ.left.is_real_node():
                 succ.left.parent = succ
@@ -258,8 +256,6 @@ class AVLTree(object):
                     node.parent.right = succ
             else:
                 self.root = succ
-            
-            succ.height = node.height
 
 
         else: # If the node has exactly 1 child (left or right)
@@ -268,7 +264,7 @@ class AVLTree(object):
             else:
                 tmp = node.left
             
-            fix_from = node.parent
+            fix_from = node.parent if node.parent.is_real_node() else None
             tmp.parent = node.parent
             if node.parent.is_real_node():
                 if node == node.parent.left:
@@ -278,191 +274,24 @@ class AVLTree(object):
             else:
                 self.root = tmp
 
-        if self.is_avl:
-            if fix_from is self.VIRTUAL_NODE:
-                return
-            
-
+        if self.is_avl and fix_from is not None:
             while fix_from.is_real_node():
-                real_height = 1 + max(fix_from.right.height, fix_from.left.height)
-                BF = abs(fix_from.left.height - fix_from.right.height)
-                if BF < 2 and fix_from.height == real_height:
-                    break
-                elif BF < 2 and fix_from.height != real_height:
+                real_height = 1 + max(fix_from.left.height, fix_from.right.height)
+                height_changed = fix_from.height != real_height
+                bf = abs(fix_from.left.height - fix_from.right.height)
+                parent = fix_from.parent  # captured before rebalance may rotate fix_from's parent link
+
+                if bf < 2:
+                    if not height_changed:
+                        break
                     fix_from.height = real_height
-                    fix_from = fix_from.parent
-                    continue
                 else:
+                    fix_from.height = real_height
                     self.rebalance(fix_from)
-                    fix_from.height = 1 + max(fix_from.right.height, fix_from.left.height)
-                    fix_from = fix_from.parent
-                    continue
-                    
-                
 
-        """while fix_from.height != real_height:
-            fix_from.height = real_height
-            if abs(fix_from.left.height - fix_from.right.height) > 1:
-                self.rebalance(fix_from)
-            if fix_from.parent == self.VIRTUAL_NODE:
-                break
-
-            fix_from = fix_from.parent
-            real_height = 1 + max(fix_from.right.height, fix_from.left.height)
-            """
-
+                fix_from = parent
 
         return
-    #ai
-    def delete_avl(self, node):
-        if not node.is_real_node():
-            return
-
-        self._size -= 1
-
-        if not node.left.is_real_node() and not node.right.is_real_node():
-            fix_from = self._detach_leaf(node)
-        elif node.left.is_real_node() and node.right.is_real_node():
-            fix_from = self._delete_two_children(node)
-        else:
-            fix_from = self._delete_single_child(node)
-
-        if fix_from is not None:
-            self._fix_delete_path(fix_from)
-    #ai
-    def _detach_leaf(self, node):
-        parent = node.parent
-        if parent.is_real_node():
-            if node == parent.left:
-                parent.left = self.VIRTUAL_NODE
-            else:
-                parent.right = self.VIRTUAL_NODE
-            return parent
-
-        self.root = self.VIRTUAL_NODE
-        return None
-    #ai
-    def _delete_single_child(self, node):
-        child = node.left if node.left.is_real_node() else node.right
-        parent = node.parent
-        child.parent = parent
-
-        if parent.is_real_node():
-            if node == parent.left:
-                parent.left = child
-            else:
-                parent.right = child
-            return parent
-
-        self.root = child
-        return child
-    #ai
-    def _delete_two_children(self, node):
-        successor = self.successor(node)
-        fix_from = successor.parent
-
-        if successor.parent.left == successor:
-            successor.parent.left = successor.right
-        else:
-            successor.parent.right = successor.right
-
-        if successor.right.is_real_node():
-            successor.right.parent = successor.parent
-
-        if fix_from == node:
-            fix_from = successor
-
-        successor.left = node.left
-        if successor.left.is_real_node():
-            successor.left.parent = successor
-
-        successor.right = node.right
-        if successor.right.is_real_node():
-            successor.right.parent = successor
-
-        successor.parent = node.parent
-        if node.parent.is_real_node():
-            if node == node.parent.left:
-                node.parent.left = successor
-            else:
-                node.parent.right = successor
-        else:
-            self.root = successor
-
-        successor.height = node.height
-        return fix_from
-    #ai
-    def _fix_delete_path(self, node):
-        cur = node
-        while cur is not None and cur.is_real_node():
-            old_height = cur.height
-            left_height = cur.left.height
-            right_height = cur.right.height
-            new_height = 1 + max(left_height, right_height)
-            balance = left_height - right_height
-
-            if balance > 1:
-                if cur.left.left.height < cur.left.right.height:
-                    self._rotate_left_delete(cur.left)
-                cur = self._rotate_right_delete(cur)
-            elif balance < -1:
-                if cur.right.right.height < cur.right.left.height:
-                    self._rotate_right_delete(cur.right)
-                cur = self._rotate_left_delete(cur)
-            else:
-                cur.height = new_height
-
-            if cur.parent is not None and cur.parent.is_real_node():
-                cur = cur.parent
-            else:
-                if self.root.is_real_node():
-                    self.root.height = 1 + max(self.root.left.height, self.root.right.height)
-                break
-
-            if balance == 0 and old_height == new_height:
-                break
-    #ai
-    def _rotate_left_delete(self, pivot):
-        child = pivot.right
-        pivot.right = child.left
-        if pivot.right.is_real_node():
-            pivot.right.parent = pivot
-
-        child.left = pivot
-        child.parent = pivot.parent
-        if child.parent.is_real_node():
-            if child.parent.left == pivot:
-                child.parent.left = child
-            else:
-                child.parent.right = child
-        else:
-            self.root = child
-
-        pivot.parent = child
-        pivot.height = 1 + max(pivot.left.height, pivot.right.height)
-        child.height = 1 + max(child.left.height, child.right.height)
-        return child
-    #ai
-    def _rotate_right_delete(self, pivot):
-        child = pivot.left
-        pivot.left = child.right
-        if pivot.left.is_real_node():
-            pivot.left.parent = pivot
-
-        child.right = pivot
-        child.parent = pivot.parent
-        if child.parent.is_real_node():
-            if child.parent.left == pivot:
-                child.parent.left = child
-            else:
-                child.parent.right = child
-        else:
-            self.root = child
-
-        pivot.parent = child
-        pivot.height = 1 + max(pivot.left.height, pivot.right.height)
-        child.height = 1 + max(child.left.height, child.right.height)
-        return child
 
     """returns a list representing dictionary 
 
